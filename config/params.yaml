@@ -20,38 +20,42 @@
     poseCovThreshold: 25.0                       # m^2, threshold for using GPS data
 
     # Export settings
-    savePCD: false                               # https://github.com/TixiaoShan/LIO-SAM/issues/3
+    savePCD: true                               # https://github.com/TixiaoShan/LIO-SAM/issues/3
     savePCDDirectory: "/Downloads/LOAM/"         # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
 
-    # Sensor Settings
+    # Sensor Settings - FIXED FOR LIVOX MID-360
     sensor: livox                               # lidar sensor type, either 'velodyne', 'ouster' or 'livox'
     N_SCAN: 4                                   # number of lidar channels (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
-    Horizon_SCAN: 6000                            # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
+    Horizon_SCAN: 4000                            # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
     downsampleRate: 1                            # default: 1. Downsample your data if too many
     # points. i.e., 16 = 64 / 4, 16 = 16 / 1
     lidarMinRange: 1.0                           # default: 1.0, minimum lidar range to be used
     lidarMaxRange: 40.0                        # default: 1000.0, maximum lidar range to be used
 
-    # IMU Settings
-    imuAccNoise: 3.9939570888238808e-03
-    imuGyrNoise: 1.5636343949698187e-03
-    imuAccBiasN: 6.4356659353532566e-05
-    imuGyrBiasN: 3.5640318696367613e-05
+    # IMU Settings - TUNED FOR MID-360
+    imuType: 0                                       # 0 = 6-axis IMU (MID-360 has 6-axis IMU)
+    # Continuous-time IMU white noise (approximate MID-360 spec)
+    # Measured value with lio_sam_imu_noise_estimator (2025.Nov.21)
+    imuAccNoise: 0.0045                                # m/s^2 / sqrt(Hz)
+    imuGyrNoise: 0.0030                               # rad/s / sqrt(Hz)
+    # IMU bias random walk (used in noiseModelBetweenBias)
+    imuAccBiasN: 0.00045                              # m/s^2 / sqrt(Hz)
+    imuGyrBiasN: 0.00030                             # rad/s / sqrt(Hz)
+    imuGravity: 9.80511                              # gravity magnitude
+    # How much to trust IMU roll/pitch when fusing with LiDAR (0–1, used as slerp weight)
+    imuRPYWeight: 0.01                               # 1% IMU, 99% LiDAR; helps reduce roll/pitch drift
 
-    imuGravity: 9.80511
-    imuRPYWeight: 0.01
-
-    extrinsicTrans:  [ 0.0,  0.0,  0.0 ]
-    extrinsicRot:    [1.0,  0.0,  0.0,
+    extrinsicTrans:  [ 0.0,  0.0,  0.0 ]             # TODO: replace with calibrated IMU->LiDAR translation
+    extrinsicRot:    [ 1.0,  0.0,  0.0,
                        0.0,  1.0,  0.0,
-                       0.0,  0.0, 1.0 ]
-    extrinsicRPY: [1.0, 0.0, 0.0,
-                  0.0, 1.0, 0.0,
-                  0.0, 0.0, 1.0]
+                       0.0,  0.0,  1.0 ]             # TODO: replace with calibrated rotation (row-major 3x3)
+    extrinsicRPY:    [ 1.0, 0.0, 0.0,
+                       0.0, 1.0, 0.0,
+                       0.0, 0.0, 1.0 ]               # kept for compatibility
 
     # LOAM feature threshold
-    edgeThreshold: 1.0
-    surfThreshold: 0.1
+    edgeThreshold: 0.03
+    surfThreshold: 0.01
     edgeFeatureMinValidNum: 10
     surfFeatureMinValidNum: 100
 
@@ -60,9 +64,11 @@
     mappingCornerLeafSize: 0.1                    # default: 0.2 - outdoor, 0.1 - indoor
     mappingSurfLeafSize: 0.2                      # default: 0.4 - outdoor, 0.2 - indoor
 
-    # robot motion constraint (in case you are using a 2D robot)
-    z_tollerance: 1000.0                          # meters
-    rotation_tollerance: 1000.0                   # radians
+    # Robot motion constraint
+    # For 3D mapping you want these very large so they effectively do nothing.
+    # For “2D robot” behavior, reduce them.
+    z_tollerance: 1000.0                          # meters, effectively unconstrained in z (3D mapping)
+    rotation_tollerance: 1000.0                   # radians, effectively unconstrained roll/pitch (3D mapping)
 
     # CPU Params
     numberOfCores: 4                              # number of cores for mapping optimization

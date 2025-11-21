@@ -29,7 +29,7 @@ set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(GTSAM REQUIRED)
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(livox_ros_driver2 REQUIRED)
 find_package(autorccar_interfaces REQUIRED)
@@ -40,7 +40,15 @@ include_directories(
 
 rosidl_generate_interfaces(${PROJECT_NAME} "msg/CloudInfo.msg" "srv/SaveMap.srv" DEPENDENCIES std_msgs sensor_msgs)
 
+add_executable(${PROJECT_NAME}_diagnostic src/sensor_diagnostic.cpp)
+ament_target_dependencies(${PROJECT_NAME}_diagnostic rclcpp sensor_msgs nav_msgs)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(${PROJECT_NAME}_diagnostic "${cpp_typesupport_target}") 
 
+add_executable(${PROJECT_NAME}_imu_noise_estimator src/imu_noise_estimator.cpp)
+ament_target_dependencies(${PROJECT_NAME}_imu_noise_estimator rclcpp sensor_msgs nav_msgs)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(${PROJECT_NAME}_imu_noise_estimator "${cpp_typesupport_target}") 
 
 add_executable(${PROJECT_NAME}_featureExtraction src/featureExtraction.cpp)
 ament_target_dependencies(${PROJECT_NAME}_featureExtraction rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_conversions pcl_msgs visualization_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL livox_ros_driver2)
@@ -52,7 +60,7 @@ ament_target_dependencies(${PROJECT_NAME}_imageProjection rclcpp rclpy std_msgs 
 target_link_libraries(${PROJECT_NAME}_imageProjection "${cpp_typesupport_target}") 
 
 add_executable(${PROJECT_NAME}_imuPreintegration src/imuPreintegration.cpp)
-ament_target_dependencies(${PROJECT_NAME}_imuPreintegration rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_conversions pcl_msgs visualization_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL GTSAM Eigen autorccar_interfaces livox_ros_driver2)
+ament_target_dependencies(${PROJECT_NAME}_imuPreintegration rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_conversions pcl_msgs visualization_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL GTSAM Eigen3 autorccar_interfaces livox_ros_driver2)
 target_link_libraries(${PROJECT_NAME}_imuPreintegration gtsam "${cpp_typesupport_target}")
 
 add_executable(${PROJECT_NAME}_mapOptimization src/mapOptmization.cpp)
@@ -63,6 +71,15 @@ else()
   target_link_libraries(${PROJECT_NAME}_mapOptimization gtsam "${cpp_typesupport_target}")
 endif()
 
+install(
+  TARGETS ${PROJECT_NAME}_diagnostic
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_imu_noise_estimator
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(
   DIRECTORY launch
